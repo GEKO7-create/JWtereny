@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tereny">
+    <meta name="theme-color" content="#4A90E2">
+    <title>Zarządzanie Terenami</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --primary-dark: #357ABD;
+            --success: #5CB85C;
+            --warning: #F0AD4E;
+            --danger: #D9534F;
+            --gray-100: #F8F9FA;
+            --gray-200: #E9ECEF;
+            --gray-300: #DEE2E6;
+            --gray-700: #495057;
+            --gray-900: #212529;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-900);
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-section {
+            background: white;
+            padding: 2rem;
+            margin: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:active {
+            background: var(--primary-dark);
+            transform: scale(0.98);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:active {
+            transform: scale(0.98);
+        }
+
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .filter-chip {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 20px;
+            background: white;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .terrain-list {
+            padding: 0 1rem 1rem;
+        }
+
+        .terrain-card {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .terrain-card:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+
+        .terrain-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .terrain-number {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-wolne {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .status-zajete {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .status-spoznione {
+            background: #F8D7DA;
+            color: #721C24;
+        }
+
+        .terrain-info {
+            font-size: 0.9rem;
+            color: var(--gray-700);
+            line-height: 1.5;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: flex-end;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-height: 85vh;
+            border-radius: 20px 20px 0 0;
+            padding: 1.5rem;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-700);
+            padding: 0.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            padding-right: 2.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-700);
+        }
+
+        .spinner {
+            border: 3px solid var(--gray-300);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fab {
+            position: fixed;
+            bottom: calc(2rem + env(safe-area-inset-bottom));
+            right: 2rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--success);
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 99;
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .sort-controls {
+            padding: 0.5rem 1rem;
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .sort-controls select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            background: var(--danger);
+            color: white;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .success-message {
+            background: var(--success);
+            color: white;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .config-section {
+            margin-bottom: 1rem;
+        }
+
+        .config-label {
+            font-size: 0.9rem;
+            color: var(--gray-700);
+            margin-bottom: 0.25rem;
+        }
+
+        .config-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ Zarządzanie Terenami</h1>
+        <div id="connectionStatus" class="config-value">Nie połączono</div>
+    </div>
+
+    <!-- Auth Section -->
+    <div id="authSection" class="auth-section">
+        <h2 style="margin-bottom: 1rem;">Konfiguracja</h2>
+
+        <div class="form-group">
+            <label class="form-label">ID Google Sheets</label>
+            <input type="text" id="sheetIdInput" class="form-control"
+                   placeholder="Wklej ID arkusza (z URL)">
+            <small style="color: var(--gray-700); font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                Znajdzź w URL: docs.google.com/spreadsheets/d/<strong>ID_TUTAJ</strong>/edit
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Google API Key</label>
+            <input type="password" id="apiKeyInput" class="form-control"
+                   placeholder="Twój Google API Key">
+            <small style="color: var(--gray-700); font-size: 0.85rem; margin-top: 0.25rem; display: block;">
+                Uzyskaj z Google Cloud Console
+            </small>
+        </div>
+
+        <button class="btn btn-primary" onclick="app.connect()">
+            Połącz z Google Sheets
+        </button>
+
+        <div style="margin-top: 1rem; padding: 1rem; background: var(--gray-200); border-radius: 8px; font-size: 0.85rem;">
+            <strong>Instrukcja:</strong>
+            <ol style="margin-left: 1.5rem; margin-top: 0.5rem; line-height: 1.6;">
+                <li>Otwórz Google Cloud Console</li>
+                <li>Włącz Google Sheets API</li>
+                <li>Utwórz API Key</li>
+                <li>Udostępnij arkusz jako "Anyone with link can view"</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appSection" class="hidden">
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-chip active" data-filter="wszystkie" onclick="app.setFilter('wszystkie')">
+                Wszystkie
+            </div>
+            <div class="filter-chip" data-filter="wolne" onclick="app.setFilter('wolne')">
+                🟢 Wolne
+            </div>
+            <div class="filter-chip" data-filter="zajete" onclick="app.setFilter('zajete')">
+                🟡 Zajęte
+            </div>
+            <div class="filter-chip" data-filter="spoznione" onclick="app.setFilter('spoznione')">
+                🔴 Spóźnione
+            </div>
+        </div>
+
+        <!-- Sort Controls -->
+        <div class="sort-controls">
+            <select class="form-control" onchange="app.setSortBy(this.value)">
+                <option value="number">Sortuj: Numer terenu</option>
+                <option value="days">Sortuj: Ilość dni</option>
+                <option value="status">Sortuj: Status</option>
+            </select>
+        </div>
+
+        <!-- Terrain List -->
+        <div id="terrainList" class="terrain-list">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Ładowanie terenów...</div>
+            </div>
+        </div>
+
+        <!-- FAB -->
+        <button class="fab" onclick="app.showAssignModal()" title="Przypisz teren">
+            +
+        </button>
+    </div>
+
+    <!-- Assign Modal -->
+    <div id="assignModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Przypisz teren</h2>
+                <button class="close-btn" onclick="app.closeModal()">&times;</button>
+            </div>
+
+            <form onsubmit="app.assignTerrain(event)">
+                <div class="form-group">
+                    <label class="form-label">Numer terenu</label>
+                    <input type="text" id="terrainNumber" class="form-control"
+                           placeholder="np. 1, 2, 3" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Głosiciel</label>
+                    <select id="głosicielSelect" class="form-control" required>
+                        <option value="">Wybierz głosiciela</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Data rozpoczęcia</label>
+                    <input type="date" id="startDate" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Data zakończenia (opcjonalnie)</label>
+                    <input type="date" id="endDate" class="form-control">
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    Zapisz przypisanie
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

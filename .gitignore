@@ -1,0 +1,30 @@
+# .gitignore
+
+# Env files with API keys
+.env
+.env.local
+*.key
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache
+.cache/
+
+# Optional: User configuration (if you want each user to configure separately)
+# config.json
